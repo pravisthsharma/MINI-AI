@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MINI AI Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+  <style>
+    :root {
+      --background-primary: #f0f4f8;
+      --background-secondary: #ffffff;
+      --text-primary: #1a1a2e;
+      --text-secondary: #4b4b6a;
+      --accent-color: #6a5acd;
+      --accent-hover: #5a4aad;
+      --gradient-primary: linear-gradient(135deg, #6a5acd 0%, #4a3a9c 100%);
+      --shadow-subtle: 0 2px 4px rgba(0, 0, 0, 0.1);
+      --shadow-elevated: 0 6px 12px rgba(0, 0, 0, 0.15);
+      --think-mode: #fbbc05;
+      --dark-bg-primary: #1e1e2f;
+      --dark-bg-secondary: #2a2a3b;
+      --dark-text-primary: #e0e0e5;
+      --dark-text-secondary: #a0a0b0;
+      --highlight-color: #fff3e0;
+      --font-size: 13px;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    @keyframes fadeOut { from { opacity: 1; visibility: visible; } to { opacity: 0; visibility: hidden; } }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes buttonBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes buttonScale { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    @keyframes buttonGlow { 0% { box-shadow: 0 0 5px var(--accent-color); } 50% { box-shadow: 0 0 15px var(--accent-color); } 100% { box-shadow: 0 0 5px var(--accent-color); } }
+    @keyframes buttonSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes thinkPulse { 0% { background-color: var(--think-mode); } 50% { background-color: #f4b400; } 100% { background-color: var(--think-mode); } }
+    @keyframes colorRotate { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes typing { 0% { width: 0; } 100% { width: 100%; } }
+    @keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes searchPulse { 0% { box-shadow: 0 0 5px var(--accent-color); } 50% { box-shadow: 0 0 15px var(--accent-color); } 100% { box-shadow: 0 0 5px var(--accent-color); } }
+    @keyframes searchExpand { from { width: 100%; } to { width: 110%; } }
+    @keyframes popUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', 'Roboto', Arial, sans-serif; transition: all 0.3s ease; }
+    body, html { height: 100%; background: var(--background-primary); line-height: 1.5; }
+    body.dark { background: var(--dark-bg-primary); }
+    body.dark .mobile-container, body.dark .app-header, body.dark .input-area, body.dark .privacy-modal .modal-content, body.dark .welcome-modal .modal-content { background: var(--dark-bg-secondary); }
+    body.dark .chat-messages { background: var(--dark-bg-primary); }
+    body.dark .message, body.dark .privacy-modal .modal-content, body.dark .welcome-modal .modal-content { color: var(--dark-text-primary); }
+    body.dark .ai-message { background: #f1f1f1; }
+    body.dark .user-message { background: #6a5acd; }
+    body.dark #messageInput, body.dark .logo span { color: var(--dark-text-primary); }
+    body.dark .input-container, body.dark .suggestion-chip, body.dark .query-correction-notice, body.dark .quick-reply { background: var(--dark-bg-primary); color: var(--dark-text-secondary); }
+    body.dark #charCount, body.dark .suggestion-chip, body.dark .quick-reply { color: var(--dark-text-secondary); }
+    body.dark .highlighted { background: #4a4a6b; }
+
+    .mobile-container { 
+      width: 100%; 
+      max-width: 100%; 
+      height: 100vh; 
+      margin: 0 auto; 
+      background: var(--background-secondary); 
+      box-shadow: var(--shadow-elevated); 
+      display: flex; 
+      flex-direction: column; 
+      overflow: hidden; 
+      border-radius: 0; 
+      animation: fadeIn 0.5s ease; 
+    }
+    @media (min-width: 768px) { 
+      .mobile-container { 
+        max-width: 80%; 
+        height: 90vh; 
+        margin: 5vh auto; 
+        border-radius: 15px; 
+      } 
+    }
+    @media (min-width: 1024px) { 
+      .mobile-container { 
+        max-width: 700px; 
+      } 
+    }
+
+    .welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab); background-size: 400% 400%; animation: colorRotate 15s ease infinite; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    .welcome-content { text-align: center; color: white; }
+    .welcome-logo { font-size: clamp(2rem, 5vw, 4rem); font-weight: 900; letter-spacing: -2px; background: var(--gradient-primary); background-clip: text; -webkit-background-clip: text; color: transparent; animation: logoAnimation 5s ease infinite; text-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+    .welcome-description { margin-top: 15px; color: rgba(255,255,255,0.8); font-size: clamp(0.8rem, 2vw, 1rem); opacity: 0; animation: fadeInUp 1s ease 2s forwards; }
+    .welcome-spinner { width: clamp(30px, 5vw, 40px); height: clamp(30px, 5vw, 40px); border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid white; border-radius: 50%; animation: spinner 1s linear infinite, pulse 2s infinite; margin: 15px auto; }
+    .welcome-screen.fade-out { animation: fadeOut 0.5s forwards; }
+
+    .welcome-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+    .welcome-modal .modal-content { background: var(--background-secondary); padding: clamp(15px, 3vw, 20px); border-radius: 10px; max-width: clamp(300px, 80vw, 500px); text-align: center; }
+    .welcome-modal h3 { font-size: clamp(14px, 2.5vw, 16px); margin-bottom: clamp(8px, 1.5vw, 10px); }
+    .welcome-modal input { width: 100%; padding: clamp(6px, 1vw, 8px); margin: clamp(5px, 1vw, 10px) 0; border: 1px solid var(--text-secondary); border-radius: 5px; font-size: clamp(11px, 2vw, 13px); }
+    .welcome-modal button { background: var(--gradient-primary); color: white; border: none; padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 15px); border-radius: 20px; cursor: pointer; margin-top: clamp(8px, 1.5vw, 10px); }
+    .welcome-modal button:hover { animation: buttonBounce 0.5s infinite; }
+
+    #chatContainer { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+    .app-header { background: var(--background-secondary); padding: 8px 12px; border-bottom: 1px solid #e0e0e0; }
+    .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; }
+    .logo-icon { width: clamp(24px, 5vw, 28px); height: clamp(24px, 5vw, 28px); background: var(--gradient-primary); border-radius: 6px; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: clamp(12px, 2vw, 14px); }
+    .logo span { font-size: clamp(14px, 3vw, 16px); font-weight: 500; }
+    .chat-messages { flex-grow: 1; overflow-y: auto; padding: clamp(8px, 2vw, 12px); background: var(--background-primary); scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
+    .message { max-width: 85%; margin: clamp(4px, 1vw, 6px) 0; padding: clamp(8px, 2vw, 10px); border-radius: 10px; font-size: var(--font-size); position: relative; animation: slideIn 0.3s ease; }
+    .user-message { align-self: flex-end; background: #6a5acd; color: white; margin-left: auto; }
+    .ai-message { align-self: flex-start; background: #f1f1f1; color: var(--text-primary); }
+    .message:hover .timestamp { display: block; }
+    .timestamp { display: none; font-size: clamp(8px, 1.5vw, 10px); color: var(--text-secondary); margin-top: 4px; }
+    .highlighted { background: var(--highlight-color); }
+    .bookmarked { border: 2px solid gold; }
+    .bookmark-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; cursor: pointer; font-size: clamp(12px, 2vw, 14px); }
+    .bookmark-btn:hover { animation: buttonBounce 0.5s infinite; }
+    .typing-indicator { background: #f1f1f1; padding: clamp(8px, 2vw, 10px); border-radius: 10px; max-width: 85%; align-self: flex-start; overflow: hidden; white-space: nowrap; animation: typing 2s infinite; }
+    body.dark .typing-indicator { background: #3a3a4b; }
+
+    .code-area { max-width: 85%; margin: clamp(4px, 1vw, 6px) 0; padding: clamp(8px, 2vw, 10px); border-radius: 10px; background: #f1f1f1; color: var(--text-primary); font-family: 'Courier New', Courier, monospace; white-space: pre-wrap; align-self: flex-start; position: relative; animation: slideIn 0.3s ease; }
+    body.dark .code-area { background: #3a3a4b; color: var(--dark-text-primary); }
+    .code-buttons { margin-top: 5px; display: flex; gap: 5px; }
+    .copy-code-btn, .preview-code-btn, .run-code-btn { background: var(--accent-color); color: white; border: none; padding: clamp(3px, 1vw, 4px) clamp(6px, 1.5vw, 8px); border-radius: 5px; cursor: pointer; font-size: clamp(9px, 1.5vw, 11px); }
+    .copy-code-btn:hover, .preview-code-btn:hover, .run-code-btn:hover { animation: buttonGlow 1s infinite; }
+    .preview-frame, .run-output { margin-top: 5px; border: 1px solid #ccc; background: white; padding: clamp(8px, 2vw, 10px); max-height: clamp(150px, 20vh, 200px); overflow: auto; display: none; animation: fadeIn 0.3s ease; }
+
+    .suggestion-container { display: flex; flex-wrap: wrap; gap: clamp(6px, 1.5vw, 10px); justify-content: center; margin-top: clamp(15px, 3vh, 20px); }
+    .suggestion-chip { background: var(--background-primary); color: var(--text-secondary); padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 16px); border-radius: 20px; cursor: pointer; transition: all 0.3s ease; font-size: clamp(11px, 2vw, 13px); animation: popUp 0.3s ease; }
+    .suggestion-chip:hover { background: var(--accent-color); color: white; transform: translateY(-2px); animation: buttonBounce 0.5s infinite; }
+
+    .input-area { background: var(--background-secondary); padding: clamp(6px, 1.5vw, 8px) clamp(8px, 2vw, 12px); border-top: 1px solid rgba(0, 0, 0, 0.1); }
+    .input-container { display: flex; align-items: center; background: var(--background-primary); border-radius: 20px; padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 10px); box-shadow: var(--shadow-subtle); }
+    #messageInput { flex-grow: 1; border: none; background: transparent; font-size: clamp(11px, 2vw, 13px); color: var(--text-primary); resize: none; padding: clamp(3px, 1vw, 4px); min-height: clamp(32px, 5vh, 36px); }
+    #messageInput:focus { animation: buttonBounce 0.5s infinite; }
+    .input-actions { display: flex; gap: clamp(4px, 1vw, 6px); align-items: center; }
+    .btn-anim { background: var(--gradient-primary); color: white; border: none; border-radius: 20px; min-width: clamp(70px, 10vw, 80px); height: clamp(28px, 4vh, 32px); padding: 0 clamp(8px, 1.5vw, 10px); display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: var(--shadow-subtle); font-size: clamp(10px, 1.5vw, 12px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-anim:hover { animation: buttonBounce 0.5s infinite, buttonGlow 1s infinite; }
+    .btn-anim:active { animation: buttonScale 0.3s ease; }
+    .btn-icon { border-radius: 50%; min-width: clamp(28px, 4vw, 32px); padding: 0; }
+    .btn-icon:hover { animation: buttonSpin 0.5s infinite linear; }
+    .think-mode-active { animation: thinkPulse 1.5s infinite; }
+    .emoji-picker { position: absolute; bottom: clamp(40px, 5vh, 50px); left: clamp(8px, 1vw, 10px); background: var(--background-secondary); border-radius: 10px; padding: clamp(8px, 1.5vw, 10px); box-shadow: var(--shadow-elevated); display: none; animation: fadeIn 0.3s ease; }
+    body.dark .emoji-picker { background: var(--dark-bg-secondary); }
+    .emoji-picker span { cursor: pointer; margin: clamp(3px, 1vw, 5px); font-size: clamp(16px, 3vw, 20px); }
+    .emoji-picker span:hover { animation: buttonBounce 0.5s infinite; }
+    .quick-replies { display: flex; gap: clamp(6px, 1.5vw, 8px); margin-top: clamp(4px, 1vh, 6px); flex-wrap: wrap; }
+    .quick-reply { background: var(--background-primary); color: var(--text-secondary); padding: clamp(4px, 1vw, 6px) clamp(8px, 1.5vw, 12px); border-radius: 20px; cursor: pointer; font-size: clamp(10px, 1.5vw, 12px); transition: all 0.3s ease; animation: popUp 0.3s ease; }
+    .quick-reply:hover { background: var(--accent-color); color: white; transform: translateY(-2px); animation: buttonBounce 0.5s infinite; }
+
+    .settings-menu { position: relative; }
+    .settings-dropdown { display: none; position: absolute; top: clamp(30px, 5vh, 40px); right: 0; background: var(--background-secondary); border-radius: 10px; box-shadow: var(--shadow-elevated); padding: clamp(8px, 1.5vw, 10px); z-index: 1000; width: clamp(180px, 30vw, 200px); animation: fadeIn 0.3s ease; }
+    body.dark .settings-dropdown { background: var(--dark-bg-secondary); }
+    .settings-dropdown button, .settings-dropdown input, .settings-dropdown select { width: 100%; margin: clamp(3px, 1vw, 5px) 0; }
+    #searchChat { padding: clamp(4px, 1vw, 6px); border: 1px solid var(--text-secondary); border-radius: 5px; font-size: clamp(10px, 1.5vw, 12px); }
+    #searchChat:focus { animation: searchPulse 1s infinite, searchExpand 0.3s ease forwards; }
+    #themeSelect, #fontSizeSlider { padding: clamp(4px, 1vw, 6px); border: 1px solid var(--text-secondary); border-radius: 5px; font-size: clamp(10px, 1.5vw, 12px); }
+    #languageSelect { padding: clamp(4px, 1vw, 6px); border: 1px solid var(--text-secondary); border-radius: 5px; font-size: clamp(10px, 1.5vw, 12px); }
+    #loadConversation { height: clamp(28px, 4vh, 32px); max-width: clamp(100px, 20vw, 120px); border: 1px solid var(--text-secondary); border-radius: 5px; font-size: clamp(10px, 1.5vw, 12px); background: var(--background-secondary); color: var(--text-secondary); }
+
+    .query-correction-notice { background-color: #f0f4f8; border: 1px solid var(--accent-color); border-radius: 10px; padding: clamp(4px, 1vw, 6px); margin: clamp(4px, 1vw, 6px) 0; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s ease; font-size: clamp(9px, 1.5vw, 11px); }
+    .query-correction-notice .use-correction { background: var(--accent-color); color: white; border: none; padding: clamp(2px, 0.5vw, 3px) clamp(4px, 1vw, 6px); border-radius: 12px; cursor: pointer; transition: background 0.2s ease; font-size: clamp(9px, 1.5vw, 11px); }
+    .query-correction-notice .use-correction:hover { background: var(--accent-hover); animation: buttonBounce 0.5s infinite; }
+
+    .sentiment-indicator { display: block; padding: clamp(2px, 0.5vw, 3px) clamp(4px, 1vw, 6px); border-radius: 8px; margin: clamp(2px, 0.5vw, 3px) 0; font-size: clamp(8px, 1.5vw, 10px); }
+    .sentiment-positive { background-color: rgba(76, 175, 80, 0.1); color: green; }
+    .sentiment-negative { background-color: rgba(244, 67, 54, 0.1); color: red; }
+    .sentiment-neutral { background-color: rgba(158, 158, 158, 0.1); color: gray; }
+
+    .reaction-bar { display: none; position: absolute; bottom: clamp(-20px, -3vh, -25px); left: clamp(6px, 1vw, 8px); background: var(--background-secondary); border-radius: 12px; padding: clamp(3px, 0.5vw, 4px); box-shadow: var(--shadow-subtle); font-size: clamp(14px, 2.5vw, 18px); animation: fadeIn 0.3s ease; }
+    .reaction-bar span { cursor: pointer; margin: 0 clamp(4px, 1vw, 6px); position: relative; }
+    .reaction-bar span:hover { animation: buttonBounce 0.5s infinite; }
+    .reaction-count { font-size: clamp(8px, 1.5vw, 10px); position: absolute; top: -10px; right: -10px; background: var(--accent-color); color: white; border-radius: 50%; padding: clamp(1px, 0.5vw, 2px) clamp(3px, 0.8vw, 5px); }
+    body.dark .reaction-bar { background: var(--dark-bg-secondary); }
+
+    .confidence-bar-container { width: clamp(60px, 10vw, 80px); height: 3px; background-color: rgba(0, 0, 0, 0.1); border-radius: 8px; overflow: hidden; margin: clamp(3px, 0.5vw, 4px) 0; }
+    .confidence-bar { height: 100%; background: var(--accent-color); transition: width 0.5s ease; }
+
+    .footer { text-align: center; padding: clamp(6px, 1vh, 8px); font-size: clamp(9px, 1.5vw, 11px); color: var(--text-secondary); background: var(--background-secondary); border-top: 1px solid rgba(0, 0, 0, 0.1); }
+    body.dark .footer { background: var(--dark-bg-secondary); color: var(--dark-text-secondary); }
+
+    .privacy-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+    .modal-content { background: var(--background-secondary); padding: clamp(15px, 3vw, 20px); border-radius: 10px; max-width: clamp(300px, 80vw, 500px); max-height: 80vh; overflow-y: auto; box-shadow: var(--shadow-elevated); color: var(--text-primary); font-size: clamp(11px, 2vw, 13px); }
+    .modal-content h3 { font-size: clamp(14px, 2.5vw, 16px); margin-bottom: clamp(8px, 1.5vw, 10px); }
+    .modal-content p { margin-bottom: clamp(10px, 2vw, 15px); }
+    .modal-content button { background: var(--gradient-primary); color: white; border: none; padding: clamp(6px, 1.5vw, 8px) clamp(12px, 2vw, 15px); border-radius: 20px; cursor: pointer; margin-top: clamp(8px, 1.5vw, 10px); }
+    .modal-content button:hover { animation: buttonBounce 0.5s infinite; }
+  </style>
+</head>
+<body>
+  <div id="welcomeScreen" class="welcome-screen">
+    <div class="welcome-content">
+      <div class="welcome-logo">MINI AI</div>
+      <p class="welcome-description">Your Intelligent Companion</p>
+      <div class="welcome-spinner"></div>
+    </div>
+  </div>
+
+  <div id="welcomeModal" class="welcome-modal">
+    <div class="modal-content">
+      <h3>Welcome to MINI AI!</h3>
+      <p>Let’s get to know each other. What’s your name?</p>
+      <input type="text" id="userNameInput" placeholder="Your name">
+      <p>And who’s your crew? (Comma-separated, optional)</p>
+      <input type="text" id="userCrewInput" placeholder="Your crew">
+      <button id="saveProfileButton">Save & Start</button>
+    </div>
+  </div>
+
+  <div class="mobile-container" id="chatContainer">
+    <div class="app-header">
+      <div class="header-content">
+        <div class="logo">
+          <div class="logo-icon">M</div>
+          <span>MINI AI</span>
+        </div>
+        <div class="header-actions flex gap-2">
+          <button id="recentChatButton" class="btn-anim btn-icon" title="Recent Chat"><span class="material-icons">history</span></button>
+          <button id="prevChat" class="btn-anim">Previous</button>
+          <button id="nextChat" class="btn-anim">Next</button>
+          <button id="thinkModeToggle" class="btn-anim">Think Mode: Off</button>
+          <select id="loadConversation">
+            <option value="">Load Chat</option>
+          </select>
+          <div class="settings-menu">
+            <button id="settingsButton" class="btn-anim">Settings</button>
+            <div id="settingsDropdown" class="settings-dropdown">
+              <input id="searchChat" type="text" placeholder="Search chat...">
+              <button id="downloadData" class="btn-anim">Download</button>
+              <button id="saveConversation" class="btn-anim">Save Chat</button>
+              <button id="exportText" class="btn-anim">Export Text</button>
+              <button id="viewBookmarks" class="btn-anim">Bookmarks</button>
+              <button id="undoLast" class="btn-anim">Undo Last</button>
+              <button id="privacyButton" class="btn-anim">Privacy</button>
+              <select id="themeSelect">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="ocean">Ocean</option>
+                <option value="forest">Forest</option>
+                <option value="sunset">Sunset</option>
+              </select>
+              <button id="profileSettings" class="btn-anim">Profile</button>
+              <select id="languageSelect">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+              </select>
+              <input type="range" id="fontSizeSlider" min="10" max="20" value="13">
+            </div>
+          </div>
+          <button id="autoSaveToggle" class="btn-anim">Auto-Save: Off</button>
+        </div>
+      </div>
+    </div>
+    <div id="chatbox" class="chat-messages"></div>
+    <div class="input-area">
+      <div class="input-container">
+        <textarea id="messageInput" rows="2" placeholder="Type your message here..."></textarea>
+        <div class="input-actions">
+          <span id="charCount" class="text-sm text-[var(--text-secondary)]">0</span>
+          <button id="emojiButton" class="btn-anim btn-icon"><span class="material-icons">emoji_emotions</span></button>
+          <div id="emojiPicker" class="emoji-picker"></div>
+          <button id="speakButton" class="btn-anim btn-icon"><span class="material-icons">volume_up</span></button>
+          <button id="sendButton" class="btn-anim btn-icon"><span class="material-icons">send</span></button>
+          <button id="newChatButton" class="btn-anim btn-icon"><span class="material-icons">add</span></button>
+        </div>
+      </div>
+      <div id="quickReplies" class="quick-replies"></div>
+    </div>
+    <div class="footer">Powered by Pravisth Sharma</div>
+  </div>
+
+  <div id="privacyModal" class="privacy-modal">
+    <div class="modal-content">
+      <h3>Privacy Policy</h3>
+      <p><strong>Effective Date:</strong> February 28, 2025</p>
+      <p>Welcome to MINI AI! At MINI AI, we value your privacy almost as much as we value a good chat. This Privacy Policy is a playful yet informative guide to how we handle your data—or don’t, depending on how you look at it.</p>
+      <p><strong>1. Information We Collect</strong><br>
+        We might collect whatever you type into MINI AI, like your name ("Hi, I’m Alex!") or your deepest secrets ("I ate the last cookie"). Don’t worry, it’s all stored in a super-secret vault called your browser’s local storage, which we swear we don’t peek into—unless you ask us to summarize it!</p>
+      <p><strong>2. How We Use Your Information</strong><br>
+        Your data fuels MINI AI’s witty responses and helps it remember your name or family (e.g., "Hey Smith fam!"). We don’t sell it, trade it, or use it to spam you with ads for cookie recipes—promise!</p>
+      <p><strong>3. Data Sharing</strong><br>
+        We don’t share your data with anyone, not even our imaginary robot friends. It stays between you, MINI AI, and your browser. If you download your chat data, that’s on you—keep it safe!</p>
+      <p><strong>4. Security</strong><br>
+        Your info is as secure as a dragon-guarded treasure in your browser. We don’t have fancy servers, so hackers would have to sneak into your device to get it. Good luck to them!</p>
+      <p><strong>5. Your Choices</strong><br>
+        Want to wipe the slate clean? Hit "New Chat" and poof—MINI AI starts fresh. You can also tell it your name again if it forgets.</p>
+      <p><strong>6. Changes to This Policy</strong><br>
+        If we tweak this policy, we’ll let you know via a dramatic pop-up—or not, since this is a fake policy anyway. Check back whenever you feel like it!</p>
+      <p><strong>7. Contact Us</strong><br>
+        Got questions? Yell into the void—or just chat with MINI AI. It’s not like we have a real support team, but we’ll pretend to listen.</p>
+      <p>Thanks for trusting MINI AI with your digital chit-chat!</p>
+      <button id="closePrivacy">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const welcomeModal = document.getElementById("welcomeModal");
+    const userNameInput = document.getElementById("userNameInput");
+    const userCrewInput = document.getElementById("userCrewInput");
+    const saveProfileButton = document.getElementById("saveProfileButton");
+    const chatContainer = document.getElementById("chatContainer");
+    const chatbox = document.getElementById("chatbox");
+    const messageInput = document.getElementById("messageInput");
+    const sendButton = document.getElementById("sendButton");
+    const newChatButton = document.getElementById("newChatButton");
+    const speakButton = document.getElementById("speakButton");
+    const emojiButton = document.getElementById("emojiButton");
+    const emojiPicker = document.getElementById("emojiPicker");
+    const quickReplies = document.getElementById("quickReplies");
+    const charCount = document.getElementById("charCount");
+    const downloadDataButton = document.getElementById("downloadData");
+    const thinkModeToggle = document.getElementById("thinkModeToggle");
+    const saveConversationButton = document.getElementById("saveConversation");
+    const recentChatButton = document.getElementById("recentChatButton");
+    const prevChatButton = document.getElementById("prevChat");
+    const nextChatButton = document.getElementById("nextChat");
+    const settingsButton = document.getElementById("settingsButton");
+    const settingsDropdown = document.getElementById("settingsDropdown");
+    const themeSelect = document.getElementById("themeSelect");
+    const profileSettings = document.getElementById("profileSettings");
+    const exportTextButton = document.getElementById("exportText");
+    const viewBookmarksButton = document.getElementById("viewBookmarks");
+    const undoLastButton = document.getElementById("undoLast");
+    const privacyButton = document.getElementById("privacyButton");
+    const fontSizeSlider = document.getElementById("fontSizeSlider");
+    const languageSelect = document.getElementById("languageSelect");
+    const loadConversation = document.getElementById("loadConversation");
+    const autoSaveToggle = document.getElementById("autoSaveToggle");
+    const searchChat = document.getElementById("searchChat");
+    const privacyModal = document.getElementById("privacyModal");
+    const closePrivacy = document.getElementById("closePrivacy");
+    const chatId = crypto.randomUUID();
+    let websocket = null;
+    let receiving = false;
+    let conversationData = [];
+    let thinkMode = false;
+    let savedConversations = JSON.parse(localStorage.getItem("miniAIConversations")) || {};
+    let userProfile = JSON.parse(localStorage.getItem("miniAIProfile")) || { name: "", family: [], firstVisit: true };
+    let autoSave = false;
+    let lastSpokenText = "";
+    let currentMessageIndex = -1;
+    let bookmarkedMessages = JSON.parse(localStorage.getItem("miniAIBookmarks")) || [];
+    let chatCategories = JSON.parse(localStorage.getItem("miniAICategories")) || {};
+    let reactions = JSON.parse(localStorage.getItem("miniAIReactions")) || {};
+
+    function getTimeBasedGreeting() {
+      const hour = new Date().getHours();
+      if (hour < 12) return "Morning";
+      if (hour < 18) return "Afternoon";
+      return "Evening";
+    }
+
+    const systemPrompt = `Hey there! I’m MINI AI, your chill and clever buddy here to help out. I’m all about being friendly, smart, and totally down-to-earth. I can chat about anything, pull up info, tackle tasks, and even switch things up based on how we’re vibing. If you’ve told me your name or fam details, I’ll throw those in—like “Hey ${userProfile.name || "you"}” or “What’s up, ${userProfile.family.length ? userProfile.family.join(" and ") : "folks"}?” Current scoop: Name - ${userProfile.name || "nobody yet"}, Family - ${userProfile.family.length ? userProfile.family.join(", ") : "none on the roster"}. Oh, and if you’re wondering who made me? That’d be my awesome creator, Pravisth Sharma! Let’s keep it real and fun—whatcha got for me today?`;
+
+    if (userProfile.firstVisit) {
+      welcomeModal.style.display = "flex";
+    } else {
+      startChat();
+    }
+
+    saveProfileButton.addEventListener("click", () => {
+      userProfile.name = userNameInput.value.trim();
+      userProfile.family = userCrewInput.value.trim() ? userCrewInput.value.split(",").map(name => name.trim()) : [];
+      userProfile.firstVisit = false;
+      localStorage.setItem("miniAIProfile", JSON.stringify(userProfile));
+      welcomeModal.style.display = "none";
+      startChat();
+    });
+
+    function startChat() {
+      setTimeout(() => {
+        welcomeScreen.classList.add("fade-out");
+        setTimeout(() => {
+          welcomeScreen.style.display = "none";
+          chatContainer.style.display = "flex";
+          connectWebSocket("", true);
+          updateConversationDropdown();
+          const savedTheme = localStorage.getItem("miniAITheme") || "light";
+          applyTheme(savedTheme);
+          themeSelect.value = savedTheme;
+          messageInput.value = localStorage.getItem("miniAIDraft") || "";
+          charCount.textContent = messageInput.value.length;
+          setupQuickReplies();
+        }, 500);
+      }, 3000);
+    }
+
+    function createMessageElement(text, alignment, confidence = null, timestamp = new Date().toISOString()) {
+      const messageElement = document.createElement("div");
+      messageElement.className = `message ${alignment === "left" ? "ai-message" : "user-message"}`;
+      messageElement.innerHTML = text.replace(/\n/g, '<br>');
+
+      const lowerText = text.toLowerCase();
+      if (lowerText.includes("who made you") || lowerText.includes("your developer") || lowerText.includes("who created you")) {
+        messageElement.innerHTML = "I’m MINI AI, and I was proudly created by Pravisth Sharma!";
+      }
+
+      const timeDiv = document.createElement("div");
+      timeDiv.className = "timestamp";
+      timeDiv.textContent = new Date(timestamp).toLocaleTimeString();
+      messageElement.appendChild(timeDiv);
+      const bookmarkBtn = document.createElement("button");
+      bookmarkBtn.className = "bookmark-btn";
+      bookmarkBtn.innerHTML = bookmarkedMessages.includes(timestamp) ? "★" : "☆";
+      bookmarkBtn.addEventListener("click", () => toggleBookmark(timestamp));
+      messageElement.appendChild(bookmarkBtn);
+      if (bookmarkedMessages.includes(timestamp)) messageElement.classList.add("bookmarked");
+      if (alignment === "right") {
+        messageElement.addEventListener("dblclick", () => editMessage(messageElement, text, timestamp));
+        messageElement.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          deleteMessage(text, timestamp);
+        });
+      }
+      if (alignment === "left" && confidence !== null) {
+        const confidenceDiv = document.createElement("div");
+        confidenceDiv.innerHTML = `<small>Confidence: ${confidence}%</small><div class="confidence-bar-container"><div class="confidence-bar" style="width: ${confidence}%"></div></div>`;
+        messageElement.appendChild(confidenceDiv);
+        const reactionBar = document.createElement("div");
+        reactionBar.className = "reaction-bar";
+        const reactionOptions = ["👍", "😂", "❤️", "😊", "🤓"];
+        reactionBar.innerHTML = reactionOptions.map(opt => {
+          const count = reactions[timestamp]?.[opt] || 0;
+          return `<span>${opt}${count > 0 ? `<span class="reaction-count">${count}</span>` : ""}</span>`;
+        }).join("");
+        reactionBar.querySelectorAll("span").forEach(span => {
+          span.addEventListener("click", () => {
+            const reaction = span.textContent[0];
+            if (!reactions[timestamp]) reactions[timestamp] = {};
+            reactions[timestamp][reaction] = (reactions[timestamp][reaction] || 0) + 1;
+            localStorage.setItem("miniAIReactions", JSON.stringify(reactions));
+            const reactionDisplay = document.createElement("small");
+            reactionDisplay.textContent = `${reaction} (${reactions[timestamp][reaction]})`;
+            reactionDisplay.style.marginLeft = "5px";
+            messageElement.appendChild(reactionDisplay);
+            span.innerHTML = `${reaction}<span class="reaction-count">${reactions[timestamp][reaction]}</span>`;
+            reactionBar.style.display = "none";
+            suggestFollowUps(text);
+          });
+        });
+        messageElement.appendChild(reactionBar);
+      }
+      return messageElement;
+    }
+
+    function suggestFollowUps(responseText) {
+      quickReplies.innerHTML = "";
+      const suggestions = [
+        "Can you explain that more?",
+        "What’s next?",
+        "Cool, any examples?",
+        responseText.includes("code") ? "How do I run this?" : "Tell me more!"
+      ];
+      suggestions.forEach(suggestion => {
+        const span = document.createElement("span");
+        span.className = "quick-reply";
+        span.textContent = suggestion;
+        span.addEventListener("click", () => {
+          messageInput.value = suggestion;
+          sendButton.click();
+        });
+        quickReplies.appendChild(span);
+      });
+    }
+
+    function createCodeArea(text) {
+      const codeArea = document.createElement("div");
+      codeArea.className = "code-area";
+      codeArea.textContent = text;
+      const buttonDiv = document.createElement("div");
+      buttonDiv.className = "code-buttons";
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "copy-code-btn";
+      copyBtn.textContent = "Copy";
+      copyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = "Copied!";
+          setTimeout(() => copyBtn.textContent = "Copy", 2000);
+        });
+      });
+      const previewBtn = document.createElement("button");
+      previewBtn.className = "preview-code-btn";
+      previewBtn.textContent = "Preview";
+      previewBtn.addEventListener("click", () => {
+        const previewFrame = codeArea.querySelector(".preview-frame") || document.createElement("div");
+        previewFrame.className = "preview-frame";
+        if (previewFrame.style.display === "block") {
+          previewFrame.style.display = "none";
+          previewBtn.textContent = "Preview";
+        } else {
+          if (text.includes("<html") || text.includes("<!DOCTYPE")) {
+            previewFrame.innerHTML = text;
+          } else if (text.includes("function") || text.match(/console\.log/)) {
+            previewFrame.textContent = "JS Preview: Check console (mocked output)";
+            try { console.log(eval(text)); } catch (e) { console.error(e); }
+          } else if (text.includes("css")) {
+            previewFrame.innerHTML = `<style>${text}</style><div style="width: 100px; height: 100px; background: #ddd;">CSS Demo</div>`;
+          } else {
+            previewFrame.textContent = "Preview not available for this code type.";
+          }
+          previewFrame.style.display = "block";
+          if (!codeArea.contains(previewFrame)) codeArea.appendChild(previewFrame);
+          previewBtn.textContent = "Hide Preview";
+        }
+      });
+      const runBtn = document.createElement("button");
+      runBtn.className = "run-code-btn";
+      runBtn.textContent = "Run";
+      runBtn.addEventListener("click", () => {
+        const runOutput = codeArea.querySelector(".run-output") || document.createElement("div");
+        runOutput.className = "run-output";
+        if (runOutput.style.display === "block") {
+          runOutput.style.display = "none";
+          runBtn.textContent = "Run";
+        } else {
+          runOutput.style.display = "block";
+          runBtn.textContent = "Hide Output";
+          if (text.includes("<html") || text.includes("<!DOCTYPE")) {
+            runOutput.innerHTML = text;
+          } else if (text.includes("function") || text.match(/console\.log/)) {
+            try {
+              const output = eval(text);
+              runOutput.textContent = output !== undefined ? String(output) : "Check console for output";
+            } catch (e) {
+              runOutput.textContent = `Error: ${e.message}`;
+            }
+          } else if (text.includes("css")) {
+            runOutput.innerHTML = `<style>${text}</style><div style="width: 100px; height: 100px; background: #ddd;">CSS Demo</div>`;
+          } else if (text.match(/print\(|input\(/)) { // Python-like
+            runOutput.textContent = "Python-like code detected. Mock output: " + text.split("print(")[1]?.split(")")[0] || "No print found";
+          } else {
+            runOutput.textContent = "Mock output for this language: " + text.slice(0, 50) + "...";
+          }
+          if (!codeArea.contains(runOutput)) codeArea.appendChild(runOutput);
+        }
+      });
+      buttonDiv.appendChild(copyBtn);
+      buttonDiv.appendChild(previewBtn);
+      buttonDiv.appendChild(runBtn);
+      codeArea.appendChild(buttonDiv);
+      return codeArea;
+    }
+
+    function createTypingIndicator() {
+      const indicator = document.createElement("div");
+      indicator.className = "typing-indicator";
+      indicator.textContent = "MINI AI’s got something cooking...";
+      return indicator;
+    }
+
+    function createSuggestionChips() {
+      const suggestionContainer = document.createElement("div");
+      suggestionContainer.className = "suggestion-container";
+      const suggestions = ["Got a joke for me?", "What’s AI all about?", "How’s the weather today?", "Help me with some math!", "Write me a quick poem", "Pick a random number"];
+      suggestions.forEach(suggestion => {
+        const chip = document.createElement("span");
+        chip.className = "suggestion-chip";
+        chip.textContent = suggestion;
+        chip.addEventListener("click", () => {
+          messageInput.value = suggestion;
+          sendButton.click();
+        });
+        suggestionContainer.appendChild(chip);
+      });
+      chatbox.appendChild(suggestionContainer);
+    }
+
+    function setupQuickReplies() {
+      quickReplies.innerHTML = "";
+      const replies = ["Cool!", "Tell me more", "Got it", "Nope"];
+      replies.forEach(reply => {
+        const span = document.createElement("span");
+        span.className = "quick-reply";
+        span.textContent = reply;
+        span.addEventListener("click", () => {
+          messageInput.value = reply;
+          sendButton.click();
+        });
+        quickReplies.appendChild(span);
+      });
+    }
+
+    function detectWeakEnglish(text) {
+      const weakPatterns = [
+        { pattern: /^how i (.*)$/i, correction: (match) => `How do I ${match[1]}?` },
+        { pattern: /^what (.*) mean$/i, correction: (match) => `What does ${match[1]} mean?` },
+        { pattern: /^i want (.*)$/i, correction: (match) => `I want to ${match[1]}.` }
+      ];
+      for (const { pattern, correction } of weakPatterns) {
+        const match = text.match(pattern);
+        if (match) return correction(match);
+      }
+      return null;
+    }
+
+    function showCorrectionNotice(original, corrected) {
+      const notice = document.createElement("div");
+      notice.className = "query-correction-notice";
+      notice.innerHTML = `
+        <span>Hmm, did you mean: "${corrected}"?</span>
+        <button class="use-correction">Yeah, use that</button>
+      `;
+      chatbox.appendChild(notice);
+      notice.querySelector(".use-correction").addEventListener("click", () => {
+        messageInput.value = corrected;
+        chatbox.removeChild(notice);
+        sendButton.click();
+      });
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function getSentiment(text) {
+      const positiveWords = ["good", "great", "happy", "awesome"];
+      const negativeWords = ["bad", "sad", "terrible", "awful"];
+      text = text.toLowerCase();
+      if (positiveWords.some(word => text.includes(word))) return "positive";
+      if (negativeWords.some(word => text.includes(word))) return "negative";
+      return "neutral";
+    }
+
+    function addSentimentIndicator(text, element) {
+      const sentiment = getSentiment(text);
+      const indicator = document.createElement("div");
+      indicator.className = `sentiment-indicator sentiment-${sentiment}`;
+      indicator.textContent = `Vibe: ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}`;
+      element.appendChild(indicator);
+    }
+
+    function updateUserProfile(text) {
+      const nameMatch = text.match(/my name is (\w+)/i);
+      const familyMatch = text.match(/my family is (.*)$/i);
+      if (nameMatch) {
+        userProfile.name = nameMatch[1];
+        localStorage.setItem("miniAIProfile", JSON.stringify(userProfile));
+        return `Sweet, ${userProfile.name}! I’ve got your name locked in now.`;
+      }
+      if (familyMatch) {
+        userProfile.family = familyMatch[1].split(/,|and/).map(name => name.trim());
+        localStorage.setItem("miniAIProfile", JSON.stringify(userProfile));
+        return `Nice! I’ll keep your crew—${userProfile.family.join(", ")}—in mind.`;
+      }
+      return null;
+    }
+
+    function getMockConfidence(text) {
+      return Math.floor(Math.random() * 21) + 80;
+    }
+
+    function isCodeResponse(text) {
+      return text.includes("```") || text.match(/function.*\{|$$ .* $$|\{.*\}/) || text.match(/print\(|input\(/);
+    }
+
+    function translateResponse(text, lang) {
+      if (lang === "es") return `¡Claro! Aquí tienes: ${text}`;
+      if (lang === "fr") return `Bien sûr ! Voilà : ${text}`;
+      return text;
+    }
+
+    function editMessage(element, originalText, timestamp) {
+      const newText = prompt("Wanna tweak that? Go for it:", originalText);
+      if (newText && newText.trim() !== originalText) {
+        element.innerHTML = newText.replace(/\n/g, '<br>');
+        addSentimentIndicator(newText, element);
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "timestamp";
+        timeDiv.textContent = new Date(timestamp).toLocaleTimeString();
+        element.appendChild(timeDiv);
+        const bookmarkBtn = document.createElement("button");
+        bookmarkBtn.className = "bookmark-btn";
+        bookmarkBtn.innerHTML = bookmarkedMessages.includes(timestamp) ? "★" : "☆";
+        bookmarkBtn.addEventListener("click", () => toggleBookmark(timestamp));
+        element.appendChild(bookmarkBtn);
+        const index = conversationData.findIndex(item => item.question === originalText && item.timestamp === timestamp);
+        if (index !== -1) {
+          conversationData[index].question = newText;
+          connectWebSocket(newText, false);
+        }
+      }
+    }
+
+    function deleteMessage(text, timestamp) {
+      const index = conversationData.findIndex(item => item.question === text && item.timestamp === timestamp);
+      if (index !== -1 && confirm("Sure you wanna ditch this message?")) {
+        conversationData.splice(index, 1);
+        if (currentMessageIndex >= conversationData.length) currentMessageIndex = conversationData.length - 1;
+        bookmarkedMessages = bookmarkedMessages.filter(b => b !== timestamp);
+        localStorage.setItem("miniAIBookmarks", JSON.stringify(bookmarkedMessages));
+        renderChat();
+      }
+    }
+
+    function toggleBookmark(timestamp) {
+      const index = bookmarkedMessages.indexOf(timestamp);
+      if (index === -1) {
+        bookmarkedMessages.push(timestamp);
+      } else {
+        bookmarkedMessages.splice(index, 1);
+      }
+      localStorage.setItem("miniAIBookmarks", JSON.stringify(bookmarkedMessages));
+      renderChat();
+    }
+
+    function saveCurrentConversation(topic = `Chat from ${new Date().toLocaleString()}`, category = "General") {
+      savedConversations[topic] = [...conversationData];
+      chatCategories[topic] = category;
+      localStorage.setItem("miniAIConversations", JSON.stringify(savedConversations));
+      localStorage.setItem("miniAICategories", JSON.stringify(chatCategories));
+      updateConversationDropdown();
+    }
+
+    function connectWebSocket(message, initChat) {
+      receiving = true;
+      sendButton.innerHTML = '<span class="material-icons">stop</span>';
+      const url = "wss://backend.buildpicoapps.com/api/chatbot/chat";
+      websocket = new WebSocket(url);
+
+      websocket.addEventListener("open", () => {
+        websocket.send(JSON.stringify({
+          chatId: chatId,
+          appId: "north-book",
+          systemPrompt: thinkMode ? `${systemPrompt} Take a sec to think it over and give me something solid.` : systemPrompt,
+          message: initChat ? `${getTimeBasedGreeting()}${userProfile.name ? `, ${userProfile.name}` : ""}! I’m MINI AI, ready to hang out and help. What’s on your mind?` : message,
+        }));
+      });
+
+      const typingIndicator = createTypingIndicator();
+      chatbox.appendChild(typingIndicator);
+      const messageElement = createMessageElement("", "left");
+
+      let responseText = "";
+      websocket.onmessage = (event) => {
+        if (typingIndicator.parentNode) {
+          chatbox.removeChild(typingIndicator);
+          chatbox.appendChild(messageElement);
+        }
+        responseText += event.data;
+        messageElement.innerHTML = translateResponse(responseText, languageSelect.value).replace(/\n/g, '<br>');
+        chatbox.scrollTop = chatbox.scrollHeight;
+      };
+
+      websocket.onclose = (event) => {
+        if (typingIndicator.parentNode) chatbox.removeChild(typingIndicator);
+        if (event.code === 1000) {
+          receiving = false;
+          sendButton.innerHTML = '<span class="material-icons">send</span>';
+          if (!initChat) {
+            const confidence = getMockConfidence(responseText);
+            const translatedText = translateResponse(responseText, languageSelect.value);
+            if (isCodeResponse(responseText)) {
+              chatbox.removeChild(messageElement);
+              const textElement = createMessageElement("Here’s your code, fam:", "left", confidence);
+              const codeElement = createCodeArea(responseText);
+              chatbox.appendChild(textElement);
+              chatbox.appendChild(codeElement);
+            } else {
+              messageElement.outerHTML = createMessageElement(translatedText, "left", confidence).outerHTML;
+              lastSpokenText = translatedText;
+              suggestFollowUps(translatedText);
+            }
+            conversationData.push({
+              question: message,
+              answer: responseText,
+              timestamp: new Date().toISOString(),
+              thinkMode: thinkMode,
+              sentiment: getSentiment(message),
+              confidence: confidence
+            });
+            if (autoSave) saveCurrentConversation();
+            if (chatbox.childElementCount === 0) createSuggestionChips();
+            currentMessageIndex = conversationData.length - 1;
+            renderChat();
+          } else {
+            chatbox.appendChild(messageElement);
+            messageElement.innerHTML = translateResponse(responseText, languageSelect.value).replace(/\n/g, '<br>');
+          }
+        } else {
+          messageElement.innerHTML += "<br><span style='color: #ef4444'>Whoops, lost connection! Let’s try that again.</span>";
+          chatbox.scrollTop = chatbox.scrollHeight;
+          receiving = false;
+          sendButton.innerHTML = '<span class="material-icons">send</span>';
+        }
+      };
+    }
+
+    function updateConversationDropdown() {
+      loadConversation.innerHTML = "<option value=''>Load Chat</option>";
+      Object.keys(savedConversations).forEach(topic => {
+        const option = document.createElement("option");
+        option.value = topic;
+        option.textContent = topic.length > 20 ? topic.slice(0, 17) + "..." : topic;
+        loadConversation.appendChild(option);
+      });
+    }
+
+    function renderChat(filteredData = conversationData) {
+      chatbox.innerHTML = "";
+      filteredData.forEach(({ question, answer, confidence, timestamp }, index) => {
+        const userMsg = createMessageElement(question, "right", null, timestamp);
+        addSentimentIndicator(question, userMsg);
+        if (index === currentMessageIndex) userMsg.classList.add("highlighted");
+        chatbox.appendChild(userMsg);
+        if (isCodeResponse(answer)) {
+          const textElement = createMessageElement("Here’s your code, fam:", "left", confidence, timestamp);
+          const codeElement = createCodeArea(answer);
+          if (index === currentMessageIndex) textElement.classList.add("highlighted");
+          chatbox.appendChild(textElement);
+          chatbox.appendChild(codeElement);
+        } else {
+          const aiMsg = createMessageElement(translateResponse(answer, languageSelect.value), "left", confidence, timestamp);
+          if (index === currentMessageIndex) aiMsg.classList.add("highlighted");
+          chatbox.appendChild(aiMsg);
+        }
+      });
+      if (filteredData.length === 0) createSuggestionChips();
+    }
+
+    function navigateMessages(direction) {
+      const messages = chatbox.querySelectorAll(".message");
+      if (messages.length === 0) return;
+      if (direction === "prev" && currentMessageIndex > 0) {
+        currentMessageIndex--;
+      } else if (direction === "next" && currentMessageIndex < conversationData.length - 1) {
+        currentMessageIndex++;
+      }
+      messages.forEach(msg => msg.classList.remove("highlighted"));
+      const targetMessage = messages[currentMessageIndex];
+      if (targetMessage) {
+        targetMessage.classList.add("highlighted");
+        targetMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+
+    downloadDataButton.addEventListener("click", () => {
+      if (conversationData.length === 0) {
+        alert("Nothing to download yet, buddy!");
+        return;
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(conversationData, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "mini_ai_conversation_data.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    exportTextButton.addEventListener("click", () => {
+      if (conversationData.length === 0) {
+        alert("No chat to export yet!");
+        return;
+      }
+      const textContent = conversationData.map(item => `${new Date(item.timestamp).toLocaleString()} - You: ${item.question}\nMINI AI: ${item.answer}`).join("\n\n");
+      const dataStr = "data:text/plain;charset=utf-8," + encodeURIComponent(textContent);
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "mini_ai_conversation.txt");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    });
+
+    thinkModeToggle.addEventListener("click", () => {
+      thinkMode = !thinkMode;
+      thinkModeToggle.textContent = `Think Mode: ${thinkMode ? "On" : "Off"}`;
+      thinkModeToggle.classList.toggle("think-mode-active", thinkMode);
+    });
+
+    saveConversationButton.addEventListener("click", () => {
+      if (conversationData.length === 0) {
+        alert("No chat to save yet, my friend!");
+        return;
+      }
+      const topic = prompt("What should we call this chat?", `Chat from ${new Date().toLocaleString()}`);
+      if (topic) {
+        const category = prompt("Pick a category (e.g., Work, Fun):", "General");
+        saveCurrentConversation(topic, category || "General");
+        alert(`Saved it as "${topic}" under ${category || "General"}—nice one!`);
+      }
+    });
+
+    recentChatButton.addEventListener("click", () => {
+      const recentChats = Object.keys(savedConversations);
+      if (recentChats.length === 0) {
+        alert("No recent chats saved yet!");
+        return;
+      }
+      const latestChat = recentChats.sort((a, b) => new Date(b) - new Date(a))[0];
+      conversationData = [...savedConversations[latestChat]];
+      currentMessageIndex = conversationData.length - 1;
+      renderChat();
+    });
+
+    loadConversation.addEventListener("change", () => {
+      const topic = loadConversation.value;
+      if (topic && savedConversations[topic]) {
+        conversationData = [...savedConversations[topic]];
+        currentMessageIndex = conversationData.length - 1;
+        renderChat();
+      }
+    });
+
+    prevChatButton.addEventListener("click", () => navigateMessages("prev"));
+    nextChatButton.addEventListener("click", () => navigateMessages("next"));
+
+    settingsButton.addEventListener("click", () => {
+      settingsDropdown.style.display = settingsDropdown.style.display === "block" ? "none" : "block";
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!settingsButton.contains(e.target) && !settingsDropdown.contains(e.target) && !emojiButton.contains(e.target) && !emojiPicker.contains(e.target)) {
+        settingsDropdown.style.display = "none";
+        emojiPicker.style.display = "none";
+      }
+    });
+
+    function applyTheme(theme) {
+      document.body.classList.remove("dark");
+      document.documentElement.style.setProperty('--background-primary', '#f0f4f8');
+      document.documentElement.style.setProperty('--accent-color', '#6a5acd');
+      document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, #6a5acd 0%, #4a3a9c 100%)');
+      
+      switch (theme) {
+        case "dark":
+          document.body.classList.add("dark");
+          break;
+        case "ocean":
+          document.documentElement.style.setProperty('--background-primary', '#e0f7fa');
+          document.documentElement.style.setProperty('--accent-color', '#0288d1');
+          document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, #0288d1 0%, #01579b 100%)');
+          break;
+        case "forest":
+          document.documentElement.style.setProperty('--background-primary', '#e8f5e9');
+          document.documentElement.style.setProperty('--accent-color', '#388e3c');
+          document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, #388e3c 0%, #2e7d32 100%)');
+          break;
+        case "sunset":
+          document.documentElement.style.setProperty('--background-primary', '#ffebee');
+          document.documentElement.style.setProperty('--accent-color', '#d81b60');
+          document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, #d81b60 0%, #ad1457 100%)');
+          break;
+      }
+      localStorage.setItem("miniAITheme", theme);
+    }
+
+    themeSelect.addEventListener("change", () => {
+      applyTheme(themeSelect.value);
+    });
+
+    profileSettings.addEventListener("click", () => {
+      const name = prompt("What’s your name, pal? (Leave blank to stick with what I’ve got):", userProfile.name);
+      const family = prompt("Who’s your crew? (Comma-separated, or leave it if it’s cool):", userProfile.family.join(", "));
+      if (name !== null) userProfile.name = name || userProfile.name;
+      if (family !== null) userProfile.family = family ? family.split(",").map(n => n.trim()) : userProfile.family;
+      localStorage.setItem("miniAIProfile", JSON.stringify(userProfile));
+      alert(`All set! You’re ${userProfile.name}, and your squad’s ${userProfile.family.join(", ") || "just you for now"}.`);
+    });
+
+    viewBookmarksButton.addEventListener("click", () => {
+      const filtered = conversationData.filter(item => bookmarkedMessages.includes(item.timestamp));
+      if (filtered.length === 0) {
+        alert("No bookmarks yet, fam!");
+        return;
+      }
+      currentMessageIndex = conversationData.findIndex(item => item.timestamp === filtered[0].timestamp);
+      renderChat(filtered);
+    });
+
+    undoLastButton.addEventListener("click", () => {
+      if (conversationData.length > 0) {
+        conversationData.pop();
+        currentMessageIndex = conversationData.length - 1;
+        renderChat();
+        alert("Last message? Poof, it’s gone!");
+      } else {
+        alert("Nothing to undo yet, fam!");
+      }
+    });
+
+    fontSizeSlider.addEventListener("input", () => {
+      document.documentElement.style.setProperty('--font-size', `${fontSizeSlider.value}px`);
+    });
+
+    autoSaveToggle.addEventListener("click", () => {
+      autoSave = !autoSave;
+      autoSaveToggle.textContent = `Auto-Save: ${autoSave ? "On" : "Off"}`;
+      if (autoSave && conversationData.length > 0) saveCurrentConversation();
+    });
+
+    privacyButton.addEventListener("click", () => {
+      privacyModal.style.display = "flex";
+      settingsDropdown.style.display = "none";
+    });
+
+    closePrivacy.addEventListener("click", () => {
+      privacyModal.style.display = "none";
+    });
+
+    newChatButton.addEventListener("click", () => {
+      if (conversationData.length > 0) {
+        saveCurrentConversation(`Chat from ${new Date().toLocaleString()}`, "General");
+      }
+      conversationData = [];
+      currentMessageIndex = -1;
+      chatbox.innerHTML = "";
+      createSuggestionChips();
+      connectWebSocket("", true);
+      localStorage.removeItem("miniAIDraft");
+      messageInput.value = "";
+      charCount.textContent = "0";
+    });
+
+    speakButton.addEventListener("click", () => {
+      if (lastSpokenText) {
+        const utterance = new SpeechSynthesisUtterance(lastSpokenText);
+        utterance.lang = languageSelect.value === "en" ? "en-US" : languageSelect.value === "es" ? "es-ES" : "fr-FR";
+        speechSynthesis.speak(utterance);
+        speakButton.style.animation = "pulse 1s infinite";
+        utterance.onend = () => speakButton.style.animation = "";
+      } else {
+        alert("No MINI AI response to speak yet!");
+      }
+    });
+
+    searchChat.addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase();
+      const filtered = conversationData.filter(item => 
+        item.question.toLowerCase().includes(query) || item.answer.toLowerCase().includes(query)
+      );
+      currentMessageIndex = filtered.length > 0 ? filtered.length - 1 : -1;
+      renderChat(filtered);
+    });
+
+    const emojis = ["😊", "😂", "👍", "❤️", "😍", "😢", "😡", "😎"];
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = emoji;
+      span.addEventListener("click", () => {
+        messageInput.value += emoji;
+        emojiPicker.style.display = "none";
+        charCount.textContent = `${messageInput.value.length}`;
+      });
+      emojiPicker.appendChild(span);
+    });
+
+    emojiButton.addEventListener("click", () => {
+      emojiPicker.style.display = emojiPicker.style.display === "block" ? "none" : "block";
+    });
+
+    languageSelect.addEventListener("change", () => {
+      renderChat();
+    });
+
+    sendButton.addEventListener("click", () => {
+      if (!receiving && messageInput.value.trim() !== "") {
+        const messageText = messageInput.value.trim();
+        const profileUpdate = updateUserProfile(messageText);
+        const corrected = detectWeakEnglish(messageText);
+        if (profileUpdate) {
+          chatbox.appendChild(createMessageElement(messageText, "right"));
+          chatbox.appendChild(createMessageElement(profileUpdate, "left"));
+          conversationData.push({
+            question: messageText,
+            answer: profileUpdate,
+            timestamp: new Date().toISOString(),
+            thinkMode: thinkMode,
+            sentiment: getSentiment(messageText),
+            confidence: getMockConfidence(profileUpdate)
+          });
+          messageInput.value = "";
+          charCount.textContent = "0";
+          chatbox.scrollTop = chatbox.scrollHeight;
+          return;
+        }
+        if (corrected && corrected !== messageText) {
+          showCorrectionNotice(messageText, corrected);
+          return;
+        }
+        const userMsg = createMessageElement(messageText, "right");
+        addSentimentIndicator(messageText, userMsg);
+        chatbox.appendChild(userMsg);
+        messageInput.value = "";
+        charCount.textContent = "0";
+        chatbox.scrollTop = chatbox.scrollHeight;
+        connectWebSocket(messageText, false);
+      } else if (receiving && websocket) {
+        websocket.close(1000);
+      }
+    });
+
+    messageInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey && !receiving && messageInput.value.trim() !== "") {
+        event.preventDefault();
+        sendButton.click();
+      }
+    });
+
+    messageInput.addEventListener("input", () => {
+      const length = messageInput.value.length;
+      charCount.textContent = `${length}`;
+      localStorage.setItem("miniAIDraft", messageInput.value);
+    });
+
+    if (chatbox.childElementCount === 0) createSuggestionChips();
+  </script>
+</body>
+</html>
